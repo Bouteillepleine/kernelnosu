@@ -2,6 +2,13 @@
 PATH=/data/adb/ksu/bin:$PATH
 ELF_BINARY="su-arm"
 
+# Option A: pin su to a standard, canonical location. The mount is hidden from
+# non-root processes by KSU's module umount (belt-and-suspenders in service.sh
+# via susfs add_try_umount), so the file stays stat/exec-consistent for root
+# while banking/RASP apps see nothing. Set to "" to fall back to hunt_min_dir
+# (the legacy "obscure lowest-file-count dir" strategy, i.e. Option B).
+SU_DIR="/system/bin"
+
 if [ ! "$KSU" = true ]; then
 	abort "[!] KernelSU only!"
 fi
@@ -80,6 +87,11 @@ if [ "$KSU" = "true" ] && [ "$KSU_KERNEL_VER_CODE" -ge 22004 ]; then
 	/data/adb/ksud feature list | grep su_compat > /dev/null 2>&1 || abort "[!] Feature not implemented!"
 fi
 
-hunt_min_dir
+if [ -n "$SU_DIR" ]; then
+	echo "[+] pinned target (Option A): $SU_DIR"
+	prep_custom_dir "$SU_DIR"
+else
+	hunt_min_dir
+fi
 
 # EOF

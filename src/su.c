@@ -19,7 +19,8 @@ static int c_main(int argc, char **argv, char **envp)
 	const char *error = "Denied\n";
 	int fd = 0;
 	
-	if (!memcmp(argv[0], "/data", strlen("/data")))
+	// argc == 0 means argv[0] is the NULL terminator; guard before deref
+	if (argc < 1 || !memcmp(argv[0], "/data", strlen("/data")))
 		goto denied;
 
 	__syscall(SYS_reboot, KSU_INSTALL_MAGIC1, KSU_INSTALL_MAGIC2, 0, (long)&fd, NONE, NONE);
@@ -32,11 +33,14 @@ static int c_main(int argc, char **argv, char **envp)
 
 	argv[0] = "su";
 
+#ifdef KNSU_DEBUG
+	// kmsg trail leaks every grant into dmesg; off by default, enable with -DKNSU_DEBUG
 	const char *debug_msg = "KernelSU: kernelnosu su->ksud\n";
 	const char *kmsg = "/dev/kmsg";
 	fd = __syscall(SYS_openat, AT_FDCWD, (long)kmsg, O_WRONLY, 0, NONE, NONE);
 	if (fd >= 0)
 		__syscall(SYS_write, fd, (long)debug_msg, strlen(debug_msg), NONE, NONE, NONE);
+#endif
 
 	const char *ksud = "/data/adb/ksud";
 	__syscall(SYS_execve, (long)ksud, (long)argv, (long)envp, NONE, NONE, NONE);
