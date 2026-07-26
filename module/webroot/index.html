@@ -220,7 +220,7 @@ $("scToggle").addEventListener("change",async e=>{
   log((want?"Enabling":"Disabling")+" SU Compatibility…");
   const r=await exec("/data/adb/ksud feature set 0 "+(want?1:0)+"; sh /data/adb/modules/kernelnosu/set_desc.sh");
   toast(r.errno===0?("SU Compatibility "+(want?"enabled":"disabled")):"Failed");
-  log(r.errno===0?("su_compat "+(want?"enabled":"disabled")+". Note: runtime-only — a reboot reloads the saved config.")
+  log(r.errno===0?("su_compat "+(want?"enabled":"disabled")+". The module card badge updates when you reopen the Modules list (the manager caches it). Runtime-only — a reboot reloads the saved config.")
                  :("Failed: "+(r.stderr||r.stdout||"errno "+r.errno)));
   e.target.disabled=false;
   refresh();
