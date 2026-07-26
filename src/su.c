@@ -27,7 +27,7 @@ static int c_main(int argc, char **argv, char **envp)
 	if (!fd)
 		goto denied;
 
-	int ret = __syscall(SYS_ioctl, fd, KSU_IOCTL_GRANT_ROOT, 0, NONE, NONE, NONE);
+	long ret = __syscall(SYS_ioctl, fd, KSU_IOCTL_GRANT_ROOT, 0, NONE, NONE, NONE);
 	if (ret < 0)
 		goto denied;
 
@@ -45,7 +45,12 @@ static int c_main(int argc, char **argv, char **envp)
 	const char *ksud = "/data/adb/ksud";
 	__syscall(SYS_execve, (long)ksud, (long)argv, (long)envp, NONE, NONE, NONE);
 
-denied:	
+	// execve only returns on failure (grant already succeeded here)
+	const char *exec_err = "kernelnosu: exec /data/adb/ksud failed\n";
+	__syscall(SYS_write, 2, (long)exec_err, strlen(exec_err), NONE, NONE, NONE);
+	return 1;
+
+denied:
 	__syscall(SYS_write, 2, (long)error, strlen(error), NONE, NONE, NONE);
 	return 1;
 }
@@ -57,7 +62,7 @@ void prep_main(long *sp)
 	char **envp = argv + argc + 1; // we need to offset it by the number of argc's!
 
 	long exit_code = c_main(argc, argv, envp);
-	__syscall(SYS_exit, exit_code, NONE, NONE, NONE, NONE, NONE);
+	__syscall(SYS_exit_group, exit_code, NONE, NONE, NONE, NONE, NONE);
 	__builtin_unreachable();
 }
 
