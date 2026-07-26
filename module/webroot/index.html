@@ -137,7 +137,7 @@
   <div class="row"><span class="k">ksud</span><span class="v mono" id="vKsud">—</span></div>
 </div>
 
-<div class="foot">nampud, xx · KernelNoSU</div>
+<div class="foot">nampud, xx, XxxY · KernelNoSU</div>
 
 <script>
 "use strict";
@@ -229,11 +229,12 @@ $("scToggle").addEventListener("change",async e=>{
 $("btnVerify").addEventListener("click",async ()=>{
   const b=$("btnVerify"); b.disabled=true; b.innerHTML='<span class="spin"></span> Verifying';
   const cmd=
-    'echo "sucompat: $(/data/adb/ksud feature list 2>/dev/null | awk \'/su_compat \\(ID=0\\)/{print (/ENABLED/)?\\"ENABLED\\":\\"DISABLED\\"}\')";'+
-    'echo "mount: $(grep -c \\" /system/bin/su \\" /proc/self/mountinfo) entry";'+
-    'echo "stat: $(ls -l '+SU+' 2>&1 | cat)";'+
-    'echo "open: $(head -c4 '+SU+' >/dev/null 2>&1 && echo readable || echo ENOENT)";'+
-    'echo "exec: uid=$('+SU+' -c id -u 2>/dev/null || echo denied)"';
+    'sc=$(/data/adb/ksud feature list 2>/dev/null | awk \'/su_compat \\(ID=0\\)/{print (/ENABLED/)?"ENABLED":"DISABLED"}\');'+
+    'mnt=$(grep -c " /system/bin/su " /proc/self/mountinfo 2>/dev/null);'+
+    'st=$(ls -l '+SU+' 2>&1);'+
+    'op=$(head -c4 '+SU+' >/dev/null 2>&1 && echo readable || echo ENOENT);'+
+    'ex=$('+SU+' -c "id -u" 2>/dev/null || echo denied);'+
+    'printf "sucompat: %s\\nmount:    %s entry\\nstat:     %s\\nopen:     %s\\nexec:     uid=%s\\n" "$sc" "$mnt" "$st" "$op" "$ex"';
   const r=await exec(cmd);
   log(r.stdout||r.stderr||"no output");
   b.disabled=false; b.textContent="Verify integrity";
