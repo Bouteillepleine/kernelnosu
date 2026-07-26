@@ -54,15 +54,16 @@ static long __syscall(long n, long a, long b, long c, long d, long e, long f) {
 __attribute__((noinline, noipa))
 static long __syscall(long n, long a, long b, long c, long d, long e, long f) {
 	long ret;
-	asm volatile(
-		"mov %5, %%r10\n"
-		"mov %6, %%r8\n"
-		"mov %7, %%r9\n"
-		"syscall"
+	// bind args 4-6 to their syscall registers directly; the old "mov ..,%r10/%r8/%r9"
+	// form left r8/r9/r10 out of the clobber list and let the compiler reuse them for
+	// the inputs, scrambling args (e.g. reboot's &fd in r10 -> su-x64 never got root).
+	register long r10 asm("r10") = d;
+	register long r8  asm("r8")  = e;
+	register long r9  asm("r9")  = f;
+	asm volatile("syscall"
 		: "=a"(ret)
-		: "a"(n), "D"(a), "S"(b), "d"(c), "r"(d), "r"(e), "r"(f)
-		: "rcx", "r11", 
-		"memory");
+		: "a"(n), "D"(a), "S"(b), "d"(c), "r"(r10), "r"(r8), "r"(r9)
+		: "rcx", "r11", "memory");
 
 	return ret;
 }
