@@ -94,4 +94,7 @@ else
 	hunt_min_dir
 fi
 
+# card badge until the first boot applies the live su mode (post-mount.sh)
+sed -i "s|^description=.*|description=[⏳ reboot to activate] real su replaces sucompat — KernelSU su binary|" "$MODPATH/module.prop" 2>/dev/null
+
 # EOF

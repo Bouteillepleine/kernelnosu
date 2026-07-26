@@ -40,7 +40,7 @@
     border:1px solid var(--line);background:var(--card);
     display:flex;align-items:center;gap:14px;
   }
-  .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 18%,transparent)}
+  .dot{width:13px;height:13px;border-radius:50%;flex:0 0 auto;background:currentColor;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}
   .hero .txt{flex:1;min-width:0}
   .hero .state{font-weight:700;font-size:16px}
   .hero .desc{color:var(--muted);font-size:13px;margin-top:2px}
@@ -218,7 +218,7 @@ $("scToggle").addEventListener("change",async e=>{
   const want=e.target.checked; // checked => enable sucompat
   e.target.disabled=true;
   log((want?"Enabling":"Disabling")+" SU Compatibility…");
-  const r=await exec("/data/adb/ksud feature set 0 "+(want?1:0));
+  const r=await exec("/data/adb/ksud feature set 0 "+(want?1:0)+"; sh /data/adb/modules/kernelnosu/set_desc.sh");
   toast(r.errno===0?("SU Compatibility "+(want?"enabled":"disabled")):"Failed");
   log(r.errno===0?("su_compat "+(want?"enabled":"disabled")+". Note: runtime-only — a reboot reloads the saved config.")
                  :("Failed: "+(r.stderr||r.stdout||"errno "+r.errno)));

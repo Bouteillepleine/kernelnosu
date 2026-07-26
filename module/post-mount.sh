@@ -29,4 +29,7 @@ if [ -x "$KSU_SUSFS" ] && [ -n "$SU_BINARY" ]; then
 	fi
 fi
 
+# reflect the live su mode ([su] / [Compat] / [nosu]) on the module card
+[ -f "$MODDIR/set_desc.sh" ] && sh "$MODDIR/set_desc.sh"
+
 # EOF

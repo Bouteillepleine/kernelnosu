@@ -2,24 +2,31 @@
 PATH=/data/adb/ksu/bin:$PATH
 MODDIR=${0%/*}
 
-# drop small wrapper for pm for termux
-# required when devpts hook is disabled
-# from agnostic-apollo, https://github.com/termux/termux-packages/discussions/8292#discussioncomment-5102555
+# ── What this action does ─────────────────────────────────────────────
+# Installs a Termux `pm` wrapper. A real su (unlike the sucompat path-hook)
+# does not relabel the pts, so Termux's `pm`/`am` can hang reading stdin.
+# The wrapper calls the system pm with stdin closed:
+#   out="$(/system/bin/pm "$@" 2>&1 </dev/null)"; echo "$out"
+# Only needed if you use Termux as root; harmless otherwise.
+# credit: agnostic-apollo, termux-packages#8292
+# ──────────────────────────────────────────────────────────────────────
+
+echo "[*] KernelNoSU action - install Termux pm wrapper"
+echo "    fixes 'pm' inside Termux when using real su instead of sucompat"
+echo ""
 
 WRAPPER="IyEvYmluL3NoCm91dD0iJCgvc3lzdGVtL2Jpbi9wbSAiJEAiIDI+JjEgPC9kZXYvbnVsbCkiCmVjaG8gIiRvdXQiCiMgRU9GCg=="
 TARGET="/data/data/com.termux/files/usr/bin/pm"
 
 if [ -f "$TARGET" ] ; then
-	# overwrite!
 	echo "$WRAPPER" | busybox base64 -d > "$TARGET"
-	
 	if [ "$(echo $WRAPPER | busybox base64 -d | busybox crc32)" = "$(cat $TARGET | busybox crc32)" ]; then
-		echo "[+] termux pm wrapper replaced!"
+		echo "[+] Termux pm wrapper installed at $TARGET"
 	else
-		echo "[!] termux pm wrapper replace fail!"
+		echo "[!] wrapper write failed (crc mismatch)"
 	fi
 else
-	echo "[!] termux pm wrapper not found!"
+	echo "[-] Termux not found - nothing to do (this action is Termux-only)"
 fi
 
 sleep 2
