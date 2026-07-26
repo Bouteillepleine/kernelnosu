@@ -314,9 +314,7 @@
       <span class="v" id="hDefault">check manually</span>
     </div>
     <div class="note">
-      The real switch is <b>root manager → Settings → "Umount modules by default"</b> (in French: <b>"Démonter les modules par défaut"</b>). This is KernelSU's default app-profile value applied to any app that doesn't have its own profile override — it is what makes the su binary above invisible to ordinary apps, confirmed on a freshly-launched, never-configured app with <b>no reboot needed</b>.<br><br>
-      This is <b>not</b> the same as "kernel_umount" / "Démontage du noyau" below — that's a different, lower-level feature and is <b>not required</b> for hiding su. We couldn't find a shell-readable way to query the default-umount-modules value live (it lives behind an ioctl the manager app calls directly), so check it in the manager's Settings page rather than trusting a status pill here.<br><br>
-      Root is never affected by any of this — only non-su app processes lose the mount.
+      Turn on <b>root manager → Settings → "Umount modules by default"</b> — that's what hides su from ordinary apps (no reboot needed). Not the same as <b>kernel_umount</b> below, which isn't required for hiding. Root always keeps access.
     </div>
   </div>
 
@@ -341,8 +339,8 @@
     </div>
     <div class="row">
       <div>
-        <div style="font-weight:600;color:var(--md-sys-color-on-surface)">kernel_umount ("Démontage du noyau")</div>
-        <div class="kk">A different, lower-level feature — <b>not required</b> for hiding su. It affects ALL modules' per-app umount and can break unrelated modules on some devices; leave off unless you have another reason to need it. See the Hiding card above for the setting that actually matters.</div>
+        <div style="font-weight:600;color:var(--md-sys-color-on-surface)">kernel_umount</div>
+        <div class="kk"><b>Not required</b> for hiding su. Affects every module's per-app umount and can break other modules — leave off unless you specifically need it.</div>
       </div>
       <label class="toggle"><input type="checkbox" id="kuToggle"><span class="track"><span class="knob"></span></span></label>
     </div>
