@@ -4,7 +4,7 @@ A real `su` binary that replaces KernelSU's built-in **sucompat** path-hooking w
 
 Sucompat works by hooking the kernel so that running or checking `/system/bin/su` transparently grants root, without any real file on disk. That leaves a tell: `stat()` reports the path present while `open()`/`read()` return `ENOENT` — an inconsistency root detectors look for. KernelNoSU instead mounts a **real** `su` where `stat`, `open` and `exec` all agree, and relies on KernelSU to umount it from non‑su apps' mount namespaces — so root sees a consistent binary and untrusted apps see nothing at all.
 
-<img src="assets/webui.png" width="320" alt="KernelNoSU WebUI">
+<img src="assets/webui-hero.png" width="320" alt="KernelNoSU WebUI">
 
 ## How it works
 
