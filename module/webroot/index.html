@@ -26,7 +26,7 @@
   body{
     background:var(--bg);color:var(--ink);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
-    padding:max(16px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    padding:max(16px,env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom));
     -webkit-font-smoothing:antialiased;max-width:640px;margin:0 auto;
   }
   header{display:flex;align-items:center;gap:12px;margin:6px 2px 18px}
@@ -126,6 +126,32 @@
     background:var(--card);color:var(--ink);font-size:17px;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
   .themebtn:active{transform:scale(.94)}
   @media (prefers-reduced-motion:reduce){#aurora{animation:none}.sheen .hero::after,.sheen .card::after{opacity:0}}
+
+  /* floating glass action bar (same treatment as the ReSukiSU manager bottom bar) */
+  .bottom-bar{
+    position:fixed;
+    bottom:calc(env(safe-area-inset-bottom) + 10px);
+    left:50%;transform:translateX(-50%);
+    width:min(600px,calc(100% - 32px));
+    display:flex;gap:10px;padding:8px;
+    border-radius:20px;
+    background:color-mix(in srgb,var(--card) 62%,transparent);
+    backdrop-filter:blur(22px) saturate(1.6);
+    -webkit-backdrop-filter:blur(22px) saturate(1.6);
+    border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);
+    box-shadow:var(--shadow),0 10px 28px rgba(0,0,0,.3);
+    z-index:5;
+  }
+  .bottom-bar::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(180deg,color-mix(in srgb,#fff 14%,transparent),transparent 55%);
+  }
+  .bottom-bar .act{
+    margin:0;flex:1;position:relative;z-index:1;
+    background:color-mix(in srgb,var(--card) 40%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+  }
+  .bottom-bar .act.primary{background:var(--accent);color:#fff;border-color:transparent}
 </style>
 </head>
 <body>
@@ -196,10 +222,6 @@
     </div>
     <label class="toggle"><input type="checkbox" id="kuToggle"><span class="track"><span class="knob"></span></span></label>
   </div>
-  <div class="btnrow">
-    <button class="act primary" id="btnVerify">Verify integrity</button>
-    <button class="act" id="btnHarden">Re-apply hide</button>
-  </div>
   <div class="log" id="log"></div>
 </div>
 
@@ -213,6 +235,11 @@
 </div>
 
 <div class="foot">nampud, xx, XxxY · KernelNoSU</div>
+
+<div class="bottom-bar">
+  <button class="act primary" id="btnVerify">Verify integrity</button>
+  <button class="act" id="btnHarden">Re-apply hide</button>
+</div>
 
 <script>
 "use strict";
