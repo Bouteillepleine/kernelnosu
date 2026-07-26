@@ -159,6 +159,19 @@
 </div>
 
 <div class="card">
+  <h2>Anti-detection</h2>
+  <div class="row"><span class="k">su hidden from apps</span><span class="v" id="pHide">—</span></div>
+  <div class="row"><span class="k">SUSFS</span><span class="v" id="pSusfs">—</span></div>
+  <div class="row"><span class="k">Zygisk</span><span class="v" id="pZyg">—</span></div>
+  <div class="row"><span class="k">Play Integrity</span><span class="v" id="pPif">—</span></div>
+  <div class="row"><span class="k">Self-heal fallback</span><span class="v" id="pHeal">—</span></div>
+  <div class="btnrow">
+    <button class="act primary" id="btnHarden">Harden now</button>
+  </div>
+  <div class="log" id="hlog"></div>
+</div>
+
+<div class="card">
   <h2>System</h2>
   <div class="row"><span class="k">Module</span><span class="v" id="vVer">—</span></div>
   <div class="row"><span class="k">Kernel</span><span class="v mono" id="vKern">—</span></div>
@@ -198,6 +211,12 @@ const STATUS_CMD =
   'printf "sucompat=%s\\nmounted=%s\\nsize=%s\\nopenable=%s\\nem=%s\\nkernel=%s\\nksud=%s\\nmodver=%s\\nsrc=%s\\n" '+
   '"$sc" "$mnt" "$size" "$op" "$em" "$kern" "$ksudv" "$modv" "$src"';
 
+const POSTURE_CMD =
+  'sf=$(/data/adb/ksu/bin/ksu_susfs show enabled_features 2>/dev/null | wc -l);'+
+  'zy=""; for m in rezygisk zygisksu ZygiskNext Zygisk; do [ -d /data/adb/modules/$m ] && zy=$m && break; done;'+
+  'pi=""; for m in playintegrityfix tricky_store PlayIntegrityFork PlayIntegrityFix safetynet-fix; do [ -d /data/adb/modules/$m ] && pi=$m && break; done;'+
+  'printf "susfs=%s\\nzygisk=%s\\npif=%s\\n" "$sf" "$zy" "$pi"';
+
 function parse(t){ const o={}; t.split("\n").forEach(l=>{const i=l.indexOf("=");if(i>0)o[l.slice(0,i)]=l.slice(i+1).trim();}); return o; }
 function pill(cls,txt){ return `<span class="pill ${cls}">${txt}</span>`; }
 
@@ -234,6 +253,18 @@ async function refresh(){
   $("vVer").textContent = s.modver||"—";
   $("vKern").textContent = s.kernel||"—";
   $("vKsud").textContent = (s.ksud||"—").replace(/^ksud\s*/,"");
+
+  loadPosture(mounted);
+}
+
+async function loadPosture(mounted){
+  $("pHide").innerHTML = mounted ? pill("ok","yes — umounted for non-su") : pill("mut","n/a");
+  $("pHeal").innerHTML = pill("ok","armed");
+  const p = parse((await exec(POSTURE_CMD)).stdout);
+  const sf = p.susfs|0;
+  $("pSusfs").innerHTML = sf>0 ? pill("ok",sf+" features") : pill("bad","not present");
+  $("pZyg").innerHTML   = p.zygisk ? pill("ok",p.zygisk) : pill("mut","off");
+  $("pPif").innerHTML   = p.pif ? pill("ok",p.pif) : pill("warn","not detected");
 }
 
 function setHero(kind,state,desc){
@@ -281,6 +312,15 @@ $("btnHide").addEventListener("click",async ()=>{
   toast("Hide re-applied");
   log(r.stdout||r.stderr||"done");
   b.disabled=false; b.textContent="Re-apply hide";
+});
+
+$("btnHarden").addEventListener("click",async ()=>{
+  const b=$("btnHarden"); b.disabled=true; b.innerHTML='<span class="spin"></span> Hardening';
+  const r=await exec("sh /data/adb/modules/kernelnosu/harden.sh; sh /data/adb/modules/kernelnosu/verify.sh");
+  const hl=$("hlog"); hl.textContent=r.stdout||r.stderr||"done"; hl.classList.add("show");
+  toast("Hardened");
+  b.disabled=false; b.textContent="Harden now";
+  refresh();
 });
 
 refresh();
