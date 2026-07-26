@@ -84,9 +84,37 @@
   .warnbox{display:none;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--warnbg);
     color:var(--warn);font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
   .warnbox.show{display:block}
+
+  /* ── 3D depth ── */
+  html{-webkit-tap-highlight-color:transparent}
+  body{perspective:1300px;perspective-origin:50% 18%;overflow-x:hidden}
+  body>*{position:relative;z-index:1}
+  #aurora{position:fixed;inset:-25% -25% -15% -25%;z-index:0;pointer-events:none;
+    filter:blur(64px) saturate(1.15);opacity:.5;
+    background:
+      radial-gradient(38% 32% at 22% 16%, color-mix(in srgb,var(--accent) 70%,transparent), transparent 70%),
+      radial-gradient(32% 30% at 84% 10%, color-mix(in srgb,var(--ok) 50%,transparent), transparent 70%),
+      radial-gradient(42% 38% at 62% 92%, color-mix(in srgb,var(--accent) 42%,transparent), transparent 72%);
+    animation:drift 20s ease-in-out infinite alternate}
+  @media (prefers-color-scheme:dark){#aurora{opacity:.42}}
+  @keyframes drift{0%{transform:translate3d(-3%,-2%,0) scale(1)}50%{transform:translate3d(3%,2%,0) scale(1.08)}100%{transform:translate3d(-2%,3%,0) scale(1.04)}}
+  .hero,.card{transform-style:preserve-3d;transition:transform .2s cubic-bezier(.2,.7,.2,1);will-change:transform}
+  .hero::after,.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+    transition:opacity .25s;background:radial-gradient(140px 140px at var(--gx,50%) var(--gy,0%), rgba(255,255,255,.16), transparent 62%)}
+  .tilt-on .hero::after,.tilt-on .card::after{opacity:1}
+  .hero>*,.card>*{transform:translateZ(20px)}
+  .logo{box-shadow:0 8px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.28)}
+  .tilt-on #heroDot{animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}
+    50%{box-shadow:0 0 0 9px color-mix(in srgb,currentColor 8%,transparent),0 0 20px color-mix(in srgb,currentColor 55%,transparent)}}
+  button.act{box-shadow:0 3px 0 color-mix(in srgb,var(--ink) 14%,transparent),0 7px 16px rgba(0,0,0,.16)}
+  button.act.primary{box-shadow:0 4px 0 color-mix(in srgb,var(--accent) 55%,#000),0 9px 20px color-mix(in srgb,var(--accent) 38%,transparent)}
+  button.act:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 14%,transparent)}
+  @media (prefers-reduced-motion:reduce){#aurora{animation:none}.hero,.card{transition:none;transform:none!important}.hero>*,.card>*{transform:none}}
 </style>
 </head>
 <body>
+<div id="aurora"></div>
 <header>
   <div class="logo">N</div>
   <div>
@@ -256,6 +284,45 @@ $("btnHide").addEventListener("click",async ()=>{
 });
 
 refresh();
+
+// ── 3D tilt / parallax (gyroscope on device, pointer on desktop) ──
+(function(){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const layers=()=>Array.from(document.querySelectorAll('.hero,.card'));
+  let raf=0, rx=0, ry=0, trx=0, tryy=0, gx=50, gy=20;
+  function frame(){
+    rx+=(trx-rx)*0.15; ry+=(tryy-ry)*0.15;
+    layers().forEach((el,i)=>{
+      const d=1-i*0.12;
+      el.style.transform=`rotateX(${(rx*d).toFixed(2)}deg) rotateY(${(ry*d).toFixed(2)}deg)`;
+      el.style.setProperty('--gx',gx.toFixed(1)+'%');
+      el.style.setProperty('--gy',gy.toFixed(1)+'%');
+    });
+    raf=0;
+    if(Math.abs(trx-rx)>0.05||Math.abs(tryy-ry)>0.05) schedule();
+  }
+  function schedule(){ if(!raf) raf=requestAnimationFrame(frame); }
+  function setTarget(px,py){        // px,py in -1..1
+    trx=-py*7; tryy=px*8; gx=50+px*40; gy=30+py*40;
+    document.body.classList.add('tilt-on'); schedule();
+  }
+  function onOrient(e){
+    if(e.gamma==null&&e.beta==null) return;
+    const g=Math.max(-30,Math.min(30,e.gamma||0))/30;
+    const b=Math.max(-45,Math.min(45,(e.beta||0)-40))/45;   // ~40° hand-hold rest
+    setTarget(g,b);
+  }
+  function gyro(){
+    if(typeof DeviceOrientationEvent==='undefined') return;
+    if(typeof DeviceOrientationEvent.requestPermission==='function')
+      DeviceOrientationEvent.requestPermission().then(s=>{ if(s==='granted') addEventListener('deviceorientation',onOrient); }).catch(()=>{});
+    else addEventListener('deviceorientation',onOrient);
+  }
+  gyro();
+  addEventListener('touchstart',gyro,{once:true,passive:true});   // some WebViews gate motion behind a gesture
+  addEventListener('pointermove',ev=>{ if(ev.pointerType==='touch') return;
+    setTarget((ev.clientX/innerWidth)*2-1,(ev.clientY/innerHeight)*2-1); },{passive:true});
+})();
 </script>
 </body>
 </html>
