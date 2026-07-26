@@ -70,7 +70,14 @@ The `su` binaries are built in CI (`.github/workflows/build.yml`, zig + sstrip) 
 
 ## Requires
 
-KernelSU **22004** or newer (new supercall interface). See [tiann/KernelSU](https://github.com/tiann/KernelSU/commit/562a3b9be795c7fc9ffc5802e24afbb07b4ae29a).
+A KernelSU-family manager with the **new ioctl supercall** (UAPI ≥ 2 — KernelSU [22004](https://github.com/tiann/KernelSU/commit/562a3b9be795c7fc9ffc5802e24afbb07b4ae29a) or newer). Verified working on:
+
+- [KernelSU](https://github.com/tiann/KernelSU) — upstream
+- [KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next)
+- [SukiSU Ultra](https://github.com/ShirkNeko/SukiSU-Ultra)
+- [ReSukiSU](https://github.com/ReSukiSU/ReSukiSU)
+
+Any other fork carrying the same supercall (UAPI ≥ 2) should work. Older prctl-only builds do not.
 
 ## Credits
 
