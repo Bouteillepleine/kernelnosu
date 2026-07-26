@@ -4,264 +4,304 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KernelNoSU</title>
+<!-- KernelSU manager's dynamic Material You palette + safe-area insets. These
+     resolve inside the root-manager WebUI (same source the mmrs module uses),
+     so the UI matches the system Monet theme; the fallbacks below cover any
+     environment where they don't load. -->
+<link rel="stylesheet" href="https://mui.kernelsu.org/internal/insets.css">
+<link rel="stylesheet" href="https://mui.kernelsu.org/internal/colors.css">
 <style>
   :root{
-    --bg:#f4f5f7; --card:#ffffff; --ink:#14171c; --muted:#6b7280; --line:#e6e8ec;
-    --accent:#2f6bff; --ok:#12a150; --warn:#d68309; --bad:#e5484d;
-    --okbg:#e7f6ec; --warnbg:#fbf0dd; --badbg:#fbe7e8; --chip:#eef1f6;
-    --shadow:0 1px 2px rgba(20,23,28,.06),0 6px 20px rgba(20,23,28,.06);
+    --md-sys-color-primary:var(--primary,#6750a4);
+    --md-sys-color-on-primary:var(--onPrimary,#fff);
+    --md-sys-color-primary-container:var(--primaryContainer,#eaddff);
+    --md-sys-color-on-primary-container:var(--onPrimaryContainer,#21005d);
+    --md-sys-color-secondary-container:var(--secondaryContainer,#e8def8);
+    --md-sys-color-on-secondary-container:var(--onSecondaryContainer,#1d192b);
+    --md-sys-color-background:var(--background,#fef7ff);
+    --md-sys-color-on-background:var(--onBackground,#1d1b20);
+    --md-sys-color-surface:var(--surface,#fef7ff);
+    --md-sys-color-on-surface:var(--onSurface,#1d1b20);
+    --md-sys-color-on-surface-variant:var(--onSurfaceVariant,#49454f);
+    --md-sys-color-outline-variant:var(--outlineVariant,#cac4d0);
+    --md-sys-color-surface-container-lowest:var(--surfaceContainerLowest,#fff);
+    --md-sys-color-surface-container-low:var(--surfaceContainerLow,#f7f2fa);
+    --md-sys-color-surface-container:var(--surfaceContainer,#f3edf7);
+    --md-sys-color-surface-container-high:var(--surfaceContainerHigh,#ece6f0);
+    --md-sys-color-surface-container-highest:var(--surfaceContainerHighest,#e6e0e9);
+    --ok:#0f9d58; --warn:#c77800; --bad:#d93838;
+    --elev1:0 1px 2px rgba(0,0,0,.10),0 1px 3px 1px rgba(0,0,0,.06);
+    --elev2:0 1px 2px rgba(0,0,0,.12),0 2px 6px 2px rgba(0,0,0,.08);
+    --mono:"JetBrains Mono","Fira Code",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme:dark){
     :root{
-      --bg:#0d0f13; --card:#161a20; --ink:#f4f7fb; --muted:#b3bcc9; --line:#2b323c;
-      --accent:#5b8cff; --ok:#3ecf7a; --warn:#f0a92e; --bad:#ff6b6f;
-      --okbg:#12291c; --warnbg:#2a2113; --badbg:#2c1516; --chip:#1f242c;
-      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+      --md-sys-color-primary:var(--primary,#d0bcff);
+      --md-sys-color-on-primary:var(--onPrimary,#381e72);
+      --md-sys-color-primary-container:var(--primaryContainer,#4f378b);
+      --md-sys-color-on-primary-container:var(--onPrimaryContainer,#eaddff);
+      --md-sys-color-secondary-container:var(--secondaryContainer,#4a4458);
+      --md-sys-color-on-secondary-container:var(--onSecondaryContainer,#e8def8);
+      --md-sys-color-background:var(--background,#141218);
+      --md-sys-color-on-background:var(--onBackground,#e6e0e9);
+      --md-sys-color-surface:var(--surface,#141218);
+      --md-sys-color-on-surface:var(--onSurface,#e6e0e9);
+      --md-sys-color-on-surface-variant:var(--onSurfaceVariant,#cac4d0);
+      --md-sys-color-outline-variant:var(--outlineVariant,#49454f);
+      --md-sys-color-surface-container-lowest:var(--surfaceContainerLowest,#0f0d13);
+      --md-sys-color-surface-container-low:var(--surfaceContainerLow,#1d1b20);
+      --md-sys-color-surface-container:var(--surfaceContainer,#211f26);
+      --md-sys-color-surface-container-high:var(--surfaceContainerHigh,#2b2930);
+      --md-sys-color-surface-container-highest:var(--surfaceContainerHighest,#36343b);
+      --ok:#5fdd9d; --warn:#f0b849; --bad:#ff6b6f;
     }
   }
-  :root[data-theme="light"]{--bg:#f4f5f7;--card:#fff;--ink:#14171c;--muted:#6b7280;--line:#e6e8ec;--accent:#2f6bff;--ok:#12a150;--warn:#d68309;--bad:#e5484d;--okbg:#e7f6ec;--warnbg:#fbf0dd;--badbg:#fbe7e8;--chip:#eef1f6}
-  :root[data-theme="dark"]{--bg:#0d0f13;--card:#161a20;--ink:#f4f7fb;--muted:#b3bcc9;--line:#2b323c;--accent:#5b8cff;--ok:#3ecf7a;--warn:#f0a92e;--bad:#ff6b6f;--okbg:#12291c;--warnbg:#2a2113;--badbg:#2c1516;--chip:#1f242c}
-  *{box-sizing:border-box}
+  /* explicit theme override (top-bar toggle) beats the media query */
+  :root[data-theme="light"]{
+    --md-sys-color-primary:var(--primary,#6750a4);--md-sys-color-on-primary:var(--onPrimary,#fff);
+    --md-sys-color-primary-container:var(--primaryContainer,#eaddff);--md-sys-color-on-primary-container:var(--onPrimaryContainer,#21005d);
+    --md-sys-color-secondary-container:var(--secondaryContainer,#e8def8);--md-sys-color-on-secondary-container:var(--onSecondaryContainer,#1d192b);
+    --md-sys-color-background:var(--background,#fef7ff);--md-sys-color-on-background:var(--onBackground,#1d1b20);
+    --md-sys-color-surface:var(--surface,#fef7ff);--md-sys-color-on-surface:var(--onSurface,#1d1b20);
+    --md-sys-color-on-surface-variant:var(--onSurfaceVariant,#49454f);--md-sys-color-outline-variant:var(--outlineVariant,#cac4d0);
+    --md-sys-color-surface-container-lowest:var(--surfaceContainerLowest,#fff);--md-sys-color-surface-container-low:var(--surfaceContainerLow,#f7f2fa);
+    --md-sys-color-surface-container:var(--surfaceContainer,#f3edf7);--md-sys-color-surface-container-high:var(--surfaceContainerHigh,#ece6f0);
+    --md-sys-color-surface-container-highest:var(--surfaceContainerHighest,#e6e0e9);
+    --ok:#0f9d58;--warn:#c77800;--bad:#d93838;
+  }
+  :root[data-theme="dark"]{
+    --md-sys-color-primary:var(--primary,#d0bcff);--md-sys-color-on-primary:var(--onPrimary,#381e72);
+    --md-sys-color-primary-container:var(--primaryContainer,#4f378b);--md-sys-color-on-primary-container:var(--onPrimaryContainer,#eaddff);
+    --md-sys-color-secondary-container:var(--secondaryContainer,#4a4458);--md-sys-color-on-secondary-container:var(--onSecondaryContainer,#e8def8);
+    --md-sys-color-background:var(--background,#141218);--md-sys-color-on-background:var(--onBackground,#e6e0e9);
+    --md-sys-color-surface:var(--surface,#141218);--md-sys-color-on-surface:var(--onSurface,#e6e0e9);
+    --md-sys-color-on-surface-variant:var(--onSurfaceVariant,#cac4d0);--md-sys-color-outline-variant:var(--outlineVariant,#49454f);
+    --md-sys-color-surface-container-lowest:var(--surfaceContainerLowest,#0f0d13);--md-sys-color-surface-container-low:var(--surfaceContainerLow,#1d1b20);
+    --md-sys-color-surface-container:var(--surfaceContainer,#211f26);--md-sys-color-surface-container-high:var(--surfaceContainerHigh,#2b2930);
+    --md-sys-color-surface-container-highest:var(--surfaceContainerHighest,#36343b);
+    --ok:#5fdd9d;--warn:#f0b849;--bad:#ff6b6f;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0}
   body{
-    background:var(--bg);color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
-    padding:max(16px,env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom));
-    -webkit-font-smoothing:antialiased;max-width:640px;margin:0 auto;
+    background:var(--md-sys-color-background);color:var(--md-sys-color-on-background);
+    font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;overscroll-behavior:none;
   }
-  header{display:flex;align-items:center;gap:12px;margin:6px 2px 18px}
-  .logo{width:40px;height:40px;border-radius:11px;flex:0 0 auto;
-    background:linear-gradient(145deg,var(--accent),#7aa2ff);
-    display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
-  header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.2px}
-  header .sub{color:var(--muted);font-size:12.5px;margin-top:1px}
-  .hero{
-    border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow);
-    border:1px solid var(--line);background:var(--card);
-    display:flex;align-items:center;gap:14px;
+
+  /* ---------- top app bar ---------- */
+  .top-bar{
+    position:sticky;top:0;z-index:100;
+    background:var(--md-sys-color-surface);
+    border-bottom:1px solid var(--md-sys-color-outline-variant);
+    padding-top:var(--window-inset-top,0px);
   }
-  .dot{width:13px;height:13px;border-radius:50%;flex:0 0 auto;background:currentColor;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}
-  .hero .txt{flex:1;min-width:0}
-  .hero .state{font-weight:700;font-size:16px}
-  .hero .desc{color:var(--muted);font-size:13px;margin-top:2px}
-  .card{
-    background:var(--card);border:1px solid var(--line);border-radius:16px;
-    padding:6px 16px;margin-bottom:14px;box-shadow:var(--shadow);
+  .top-bar-in{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:800px;margin:0 auto}
+  .logo{width:36px;height:36px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
+    background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary);font-weight:800;font-size:17px}
+  .titles{flex:1;min-width:0}
+  .titles h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px;color:var(--md-sys-color-on-surface)}
+  .titles .sub{color:var(--md-sys-color-on-surface-variant);font-size:12.5px;margin-top:1px}
+  .iconbtn{width:40px;height:40px;border-radius:50%;flex:0 0 auto;border:0;cursor:pointer;
+    background:transparent;color:var(--md-sys-color-on-surface-variant);font-size:18px;line-height:1;
+    display:grid;place-items:center;transition:background .2s}
+  .iconbtn:active{background:var(--md-sys-color-surface-container-highest)}
+
+  main{max-width:800px;margin:0 auto;width:100%;
+    padding:16px 16px calc(96px + var(--window-inset-bottom,0px));
+    display:flex;flex-direction:column;gap:16px}
+
+  /* ---------- hero (status) ---------- */
+  .hero-card{
+    border-radius:28px;padding:24px;position:relative;overflow:hidden;
+    display:flex;align-items:center;gap:18px;
+    background:var(--md-sys-color-surface-container-high);
+    box-shadow:var(--elev1);transition:background .3s;
   }
-  .card h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
-    margin:14px 0 6px;font-weight:700;display:flex;align-items:center;gap:8px}
-  .card h2 .n{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600;font-size:11.5px;color:var(--muted)}
-  .row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+  .hero-card.ok{background:color-mix(in srgb,var(--ok) 16%,var(--md-sys-color-surface-container-high))}
+  .hero-card.warn{background:color-mix(in srgb,var(--warn) 16%,var(--md-sys-color-surface-container-high))}
+  .hero-card.bad{background:color-mix(in srgb,var(--bad) 18%,var(--md-sys-color-surface-container-high))}
+  .hero-ring{width:52px;height:52px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    color:var(--md-sys-color-on-surface-variant);
+    background:color-mix(in srgb,currentColor 18%,transparent);transition:color .3s}
+  .hero-ring .core{width:16px;height:16px;border-radius:50%;background:currentColor;
+    box-shadow:0 0 0 4px color-mix(in srgb,currentColor 22%,transparent)}
+  .hero-txt{flex:1;min-width:0}
+  .hero-state{font-size:22px;font-weight:700;letter-spacing:-.3px;line-height:1.15;color:var(--md-sys-color-on-surface)}
+  .hero-desc{color:var(--md-sys-color-on-surface-variant);font-size:13.5px;margin-top:4px}
+
+  /* ---------- metric cards ---------- */
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .metric{background:var(--md-sys-color-surface-container);border-radius:20px;padding:18px;
+    position:relative;overflow:hidden;min-height:92px;display:flex;flex-direction:column;gap:8px}
+  .metric .mv{font-size:26px;font-weight:700;color:var(--md-sys-color-primary);line-height:1;overflow-wrap:anywhere}
+  .metric .ml{font-size:12.5px;font-weight:500;color:var(--md-sys-color-on-surface-variant)}
+
+  /* ---------- info cards ---------- */
+  .card{background:var(--md-sys-color-surface-container-low);border-radius:24px;padding:6px 20px;box-shadow:var(--elev1)}
+  .card h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--md-sys-color-on-surface-variant);
+    margin:16px 2px 8px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card h2 .n{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600;font-size:11.5px}
+  .row{display:flex;align-items:center;gap:10px;padding:13px 2px;border-top:1px solid var(--md-sys-color-outline-variant);flex-wrap:wrap}
   .row:first-of-type{border-top:0}
-  .row .k{color:var(--muted);font-size:13.5px;flex:0 0 auto}
-  .row .kk{font-size:11.5px;color:var(--muted);margin-top:1px;font-weight:500}
+  .row .k{color:var(--md-sys-color-on-surface-variant);font-size:14px;flex:0 0 auto}
+  .row .kk{font-size:12px;color:var(--md-sys-color-on-surface-variant);margin-top:2px;opacity:.85}
   .row .v{margin-left:auto;text-align:right;font-weight:600;min-width:0;max-width:100%;
-    overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+    overflow-wrap:anywhere;color:var(--md-sys-color-on-surface)}
+  .mono{font-family:var(--mono);font-size:13px}
+
+  /* ---------- MD3 tonal chips ---------- */
   .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
-    font-size:12.5px;font-weight:750;letter-spacing:.15px;border:1px solid transparent;max-width:100%;
-    overflow-wrap:anywhere;
-    box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent),0 2px 6px rgba(0,0,0,.30),0 1px 1px rgba(0,0,0,.18)}
-  .pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent);
-    background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 32%,var(--card)),color-mix(in srgb,var(--ok) 17%,var(--card)))}
-  .pill.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent);
-    background:linear-gradient(180deg,color-mix(in srgb,var(--warn) 32%,var(--card)),color-mix(in srgb,var(--warn) 17%,var(--card)))}
-  .pill.bad{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,transparent);
-    background:linear-gradient(180deg,color-mix(in srgb,var(--bad) 32%,var(--card)),color-mix(in srgb,var(--bad) 17%,var(--card)))}
-  .pill.mut{color:var(--muted);border-color:var(--line);
-    background:linear-gradient(180deg,color-mix(in srgb,#fff 8%,var(--chip)),var(--chip))}
-  .badgerow{display:flex;flex-wrap:wrap;gap:8px;padding:11px 0}
-  .toggle{position:relative;width:46px;height:28px;flex:0 0 auto;cursor:pointer}
+    font-size:13px;font-weight:600;line-height:1.25;max-width:100%;overflow-wrap:anywhere}
+  .pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--md-sys-color-surface-container-high))}
+  .pill.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,var(--md-sys-color-surface-container-high))}
+  .pill.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,var(--md-sys-color-surface-container-high))}
+  .pill.mut{color:var(--md-sys-color-on-surface-variant);background:var(--md-sys-color-surface-container-high)}
+
+  .note{font-size:13px;color:var(--md-sys-color-on-surface-variant);padding:4px 2px 14px;line-height:1.55}
+  .note b{color:var(--md-sys-color-on-surface);font-weight:600}
+
+  /* ---------- MD3 switch ---------- */
+  .toggle{position:relative;width:52px;height:32px;flex:0 0 auto;cursor:pointer}
   .toggle input{opacity:0;width:0;height:0;position:absolute}
-  .track{position:absolute;inset:0;background:var(--chip);border-radius:999px;transition:.18s;border:1px solid var(--line)}
-  .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
-    box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s}
-  .toggle input:checked + .track{background:var(--accent);border-color:transparent}
-  .toggle input:checked + .track .knob{transform:translateX(18px)}
-  .btnrow{display:flex;gap:10px;margin:12px 0 4px}
-  button.act{flex:1;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
-    font:inherit;font-weight:650;padding:11px;border-radius:12px;cursor:pointer;transition:.12s}
-  button.act:active{transform:scale(.98)}
-  button.act.primary{background:var(--accent);color:#fff;border-color:transparent}
-  button.act:disabled{opacity:.55}
-  .log{margin-top:10px;padding:11px 13px;border-radius:12px;background:var(--chip);
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
-    white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);display:none}
+  .track{position:absolute;inset:0;border-radius:999px;transition:.2s;
+    background:var(--md-sys-color-surface-container-highest);
+    border:2px solid var(--md-sys-color-on-surface-variant)}
+  .knob{position:absolute;top:8px;left:8px;width:16px;height:16px;border-radius:50%;
+    background:var(--md-sys-color-on-surface-variant);transition:.2s}
+  .toggle input:checked + .track{background:var(--md-sys-color-primary);border-color:var(--md-sys-color-primary)}
+  .toggle input:checked + .track .knob{width:24px;height:24px;top:2px;left:22px;background:var(--md-sys-color-on-primary)}
+
+  /* ---------- log ---------- */
+  .log{margin:8px 0 14px;padding:14px;border-radius:16px;background:var(--md-sys-color-surface-container-highest);
+    font-family:var(--mono);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;
+    color:var(--md-sys-color-on-surface-variant);display:none}
   .log.show{display:block}
-  .note{font-size:12px;color:var(--muted);padding:0 0 12px;line-height:1.5}
-  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:16px}
   .spin{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;
     border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .warnbox{display:none;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--warnbg);
-    color:var(--warn);font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+
+  .warnbox{display:none;padding:14px 16px;border-radius:16px;
+    background:color-mix(in srgb,var(--warn) 16%,var(--md-sys-color-surface-container));
+    color:var(--warn);font-size:13px;font-weight:600}
   .warnbox.show{display:block}
+  .foot{text-align:center;color:var(--md-sys-color-on-surface-variant);font-size:11.5px;opacity:.8;padding:4px 0}
 
-  /* ── depth & light (no card rotation: smooth scroll, no layout shift) ── */
-  html{-webkit-tap-highlight-color:transparent}
-  body{overflow-x:hidden}
-  body>*{position:relative;z-index:1}
-  #aurora{position:fixed;inset:0;z-index:0;pointer-events:none;
-    filter:blur(60px) saturate(1.15);opacity:.42;will-change:transform;
-    background:
-      radial-gradient(38% 30% at 20% 12%, color-mix(in srgb,var(--accent) 65%,transparent), transparent 70%),
-      radial-gradient(32% 28% at 85% 8%, color-mix(in srgb,var(--ok) 48%,transparent), transparent 70%),
-      radial-gradient(44% 40% at 60% 96%, color-mix(in srgb,var(--accent) 40%,transparent), transparent 72%);
-    animation:drift 22s ease-in-out infinite alternate}
-  @media (prefers-color-scheme:light){#aurora{opacity:.5}}
-  :root[data-theme="light"] #aurora{opacity:.5}
-  @keyframes drift{from{transform:translate3d(-3%,-2%,0)}to{transform:translate3d(3%,3%,0)}}
-  .hero,.card{position:relative;overflow:hidden}
-  .hero::after,.card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
-    transition:opacity .3s;background:radial-gradient(180px 180px at var(--gx,50%) var(--gy,0%), rgba(255,255,255,.13), transparent 60%)}
-  .sheen .hero::after,.sheen .card::after{opacity:1}
-  .logo{box-shadow:0 8px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 5px rgba(0,0,0,.28)}
-  .sheen #heroDot{animation:pulse 2.6s ease-in-out infinite}
-  @keyframes pulse{0%,100%{box-shadow:0 0 0 5px color-mix(in srgb,currentColor 20%,transparent)}
-    50%{box-shadow:0 0 0 9px color-mix(in srgb,currentColor 8%,transparent),0 0 20px color-mix(in srgb,currentColor 55%,transparent)}}
-  button.act{box-shadow:0 3px 0 color-mix(in srgb,var(--ink) 14%,transparent),0 7px 16px rgba(0,0,0,.16)}
-  button.act.primary{box-shadow:0 4px 0 color-mix(in srgb,var(--accent) 55%,#000),0 9px 20px color-mix(in srgb,var(--accent) 38%,transparent)}
-  button.act:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 14%,transparent)}
-  .themebtn{margin-left:auto;flex:0 0 auto;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);
-    background:var(--card);color:var(--ink);font-size:17px;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
-  .themebtn:active{transform:scale(.94)}
-  @media (prefers-reduced-motion:reduce){#aurora{animation:none}.sheen .hero::after,.sheen .card::after{opacity:0}}
-
-  /* KSU-Next "liquid" floating capsule (ported from KernelSU-Next's
-     FloatingBottomBar): a 24px glass capsule with a bright top-fading rim,
-     an inner top sheen and a translucent body. These are actions (not tabs),
-     so there's no sliding selector — but the glass look matches the metamodule
-     tab bar, and the pills spring on press for the same fluid feel. */
+  /* ---------- bottom action bar (MD3, solid surface like mmrs nav) ---------- */
   .bottom-bar{
-    position:fixed;
-    bottom:calc(env(safe-area-inset-bottom) + 16px);
-    left:50%;transform:translateX(-50%);
-    width:min(560px,calc(100% - 28px));
-    display:flex;gap:7px;padding:7px;
-    border-radius:24px;overflow:hidden;
-    background:color-mix(in srgb,var(--card) 72%,transparent);
-    backdrop-filter:blur(26px) saturate(1.7);
-    -webkit-backdrop-filter:blur(26px) saturate(1.7);
-    border:1px solid color-mix(in srgb,#fff 20%,transparent);
-    box-shadow:
-      0 12px 34px rgba(0,0,0,.5),
-      0 3px 10px rgba(0,0,0,.4),
-      inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent);
-    z-index:5;
+    position:fixed;left:0;right:0;bottom:0;z-index:90;
+    display:flex;gap:12px;
+    padding:12px 16px calc(12px + var(--window-inset-bottom,0px));
+    background:var(--md-sys-color-surface);
+    border-top:1px solid var(--md-sys-color-outline-variant);
   }
-  /* bright rim fading top→bottom, like the Compose glassRim gradient */
-  .bottom-bar::before{
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:linear-gradient(180deg,
-      color-mix(in srgb,#fff 14%,transparent),
-      color-mix(in srgb,#fff 3%,transparent) 45%,
-      transparent 70%);
-  }
-  /* translucent pills inside the glass — spring on press for the fluid feel */
-  .bottom-bar .act{
-    margin:0;flex:1;position:relative;z-index:1;padding:13px;
-    border-radius:17px;color:var(--ink);
-    background:color-mix(in srgb,#fff 6%,transparent);
-    border:1px solid color-mix(in srgb,#fff 10%,transparent);
-    box-shadow:none;
-    transition:transform .28s cubic-bezier(.34,1.42,.5,1),box-shadow .2s ease;
-  }
-  .bottom-bar .act:active{transform:scale(.94);box-shadow:none}
-  .bottom-bar .act.primary{
-    background:color-mix(in srgb,var(--accent) 90%,transparent);color:#fff;
-    border-color:color-mix(in srgb,#fff 18%,transparent);
-    box-shadow:0 3px 12px color-mix(in srgb,var(--accent) 50%,transparent),
-               inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent);
-  }
-  .bottom-bar .act.primary:active{box-shadow:0 1px 6px color-mix(in srgb,var(--accent) 45%,transparent)}
-  @media (prefers-reduced-motion:reduce){.bottom-bar .act{transition:none}}
+  .bottom-bar .btnwrap{max-width:800px;margin:0 auto;width:100%;display:flex;gap:12px}
+  .act{flex:1;appearance:none;border:0;font:inherit;font-size:15px;font-weight:600;
+    padding:14px;border-radius:100px;cursor:pointer;transition:filter .15s,transform .1s,background .2s}
+  .act:active{transform:scale(.98)}
+  .act.primary{background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary)}
+  .act.primary:active{filter:brightness(1.08)}
+  .act.tonal{background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)}
+  .act:disabled{opacity:.55;cursor:default}
+  @media (prefers-reduced-motion:reduce){.act,.hero-card,.hero-ring{transition:none}}
 </style>
 </head>
 <body>
-<div id="aurora"></div>
-<header>
-  <div class="logo">N</div>
-  <div>
-    <h1>KernelNoSU</h1>
-    <div class="sub">real su instead of sucompat hooking</div>
+<header class="top-bar">
+  <div class="top-bar-in">
+    <div class="logo">N</div>
+    <div class="titles">
+      <h1>KernelNoSU</h1>
+      <div class="sub">real su instead of sucompat hooking</div>
+    </div>
+    <button class="iconbtn" id="themeBtn" aria-label="Toggle theme">🌙</button>
   </div>
-  <button class="themebtn" id="themeBtn" aria-label="Toggle theme">🌙</button>
 </header>
 
-<div id="nobridge" class="warnbox">Not running inside a KernelSU WebUI — open this from your root manager's module WebUI to control the module.</div>
+<main>
+  <div id="nobridge" class="warnbox">Not running inside a KernelSU WebUI — open this from your root manager's module WebUI to control the module.</div>
 
-<div class="hero" id="hero">
-  <span class="dot" id="heroDot" style="color:var(--muted)">&nbsp;</span>
-  <div class="txt">
-    <div class="state" id="heroState">Checking…</div>
-    <div class="desc" id="heroDesc">Reading module status</div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>Real su<span class="n" id="vBin">—</span></h2>
-  <div class="row"><span class="k">su mode</span><span class="v" id="vMode">—</span></div>
-  <div class="row"><span class="k mono" id="vSuPath">su target</span><span class="v" id="vMount">—</span></div>
-  <div class="row"><span class="k">Consistency</span><span class="v" id="vConsist">—</span></div>
-  <div class="row"><span class="k">sucompat (path-hook)</span><span class="v" id="vSucompat">—</span></div>
-</div>
-
-<div class="card">
-  <h2>Hiding from apps</h2>
-  <div class="row"><span class="k">This shell's own view</span><span class="v" id="hVisible">—</span></div>
-  <div class="row"><span class="k">susfs sus_path</span><span class="v" id="hSusPath">—</span></div>
-  <div class="row">
-    <div><span class="k">Default umount modules</span><div class="kk">The setting that actually hides su from apps — not queryable from shell</div></div>
-    <span class="v" id="hDefault">check manually</span>
-  </div>
-  <div class="note">
-    The real switch is <b>root manager → Settings → "Umount modules by default"</b> (in French: <b>"Démonter les modules par défaut"</b>). This is KernelSU's default app-profile value applied to any app that doesn't have its own profile override — it is what makes the su binary above invisible to ordinary apps, confirmed on a freshly-launched, never-configured app with <b>no reboot needed</b>.<br><br>
-    This is <b>not</b> the same as "kernel_umount" / "Démontage du noyau" below — that's a different, lower-level feature and is <b>not required</b> for hiding su. We couldn't find a shell-readable way to query the default-umount-modules value live (it lives behind an ioctl the manager app calls directly), so check it in the manager's Settings page rather than trusting a status pill here.<br><br>
-    Root is never affected by any of this — only non-su app processes lose the mount.
-  </div>
-</div>
-
-<div class="card">
-  <h2>Mount engine</h2>
-  <div class="row"><span class="k">Active metamodule</span><span class="v mono" id="mmName">—</span></div>
-  <div class="row"><span class="k">Version</span><span class="v mono" id="mmVer">—</span></div>
-  <div class="row"><span class="k">kernelnosu-aware</span><span class="v" id="mmAware">—</span></div>
-  <div class="note" id="mmNote"></div>
-</div>
-
-<div class="card">
-  <h2>Controls</h2>
-  <div class="row">
-    <div>
-      <div style="font-weight:650">SU Compatibility fallback</div>
-      <div style="color:var(--muted);font-size:12.5px">On = kernel path-hook (detectable). Off = real su only. The metamodule normally manages this automatically around the mount.</div>
+  <div class="hero-card" id="hero">
+    <span class="hero-ring" id="heroDot"><span class="core"></span></span>
+    <div class="hero-txt">
+      <div class="hero-state" id="heroState">Checking…</div>
+      <div class="hero-desc" id="heroDesc">Reading module status</div>
     </div>
-    <label class="toggle"><input type="checkbox" id="scToggle"><span class="track"><span class="knob"></span></span></label>
   </div>
-  <div class="row">
-    <div>
-      <div style="font-weight:650">kernel_umount ("Démontage du noyau")</div>
-      <div style="color:var(--muted);font-size:12.5px">A different, lower-level feature — <b>not required</b> for hiding su. It affects ALL modules' per-app umount and can break unrelated modules on some devices; leave off unless you have another reason to need it. See the Hiding card above for the setting that actually matters.</div>
+
+  <div class="metrics">
+    <div class="metric"><span class="mv" id="mMode">—</span><span class="ml">su mode</span></div>
+    <div class="metric"><span class="mv" id="mSusfs">—</span><span class="ml">SUSFS features</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Real su<span class="n mut pill" id="vBin">—</span></h2>
+    <div class="row"><span class="k">su mode</span><span class="v" id="vMode">—</span></div>
+    <div class="row"><span class="k mono" id="vSuPath">su target</span><span class="v" id="vMount">—</span></div>
+    <div class="row"><span class="k">Consistency</span><span class="v" id="vConsist">—</span></div>
+    <div class="row"><span class="k">sucompat (path-hook)</span><span class="v" id="vSucompat">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Hiding from apps</h2>
+    <div class="row"><span class="k">This shell's own view</span><span class="v" id="hVisible">—</span></div>
+    <div class="row"><span class="k">susfs sus_path</span><span class="v" id="hSusPath">—</span></div>
+    <div class="row">
+      <div><span class="k">Default umount modules</span><div class="kk">The setting that actually hides su from apps — not queryable from shell</div></div>
+      <span class="v" id="hDefault">check manually</span>
     </div>
-    <label class="toggle"><input type="checkbox" id="kuToggle"><span class="track"><span class="knob"></span></span></label>
+    <div class="note">
+      The real switch is <b>root manager → Settings → "Umount modules by default"</b> (in French: <b>"Démonter les modules par défaut"</b>). This is KernelSU's default app-profile value applied to any app that doesn't have its own profile override — it is what makes the su binary above invisible to ordinary apps, confirmed on a freshly-launched, never-configured app with <b>no reboot needed</b>.<br><br>
+      This is <b>not</b> the same as "kernel_umount" / "Démontage du noyau" below — that's a different, lower-level feature and is <b>not required</b> for hiding su. We couldn't find a shell-readable way to query the default-umount-modules value live (it lives behind an ioctl the manager app calls directly), so check it in the manager's Settings page rather than trusting a status pill here.<br><br>
+      Root is never affected by any of this — only non-su app processes lose the mount.
+    </div>
   </div>
-  <div class="log" id="log"></div>
-</div>
 
-<div class="card">
-  <h2>System</h2>
-  <div class="row"><span class="k">Module</span><span class="v" id="vVer">—</span></div>
-  <div class="row"><span class="k">Kernel</span><span class="v mono" id="vKern">—</span></div>
-  <div class="row"><span class="k">ksud</span><span class="v mono" id="vKsud">—</span></div>
-  <div class="row"><span class="k">SUSFS</span><span class="v" id="pSusfs">—</span></div>
-  <div class="row"><span class="k">Zygisk</span><span class="v" id="pZyg">—</span></div>
-</div>
+  <div class="card">
+    <h2>Mount engine</h2>
+    <div class="row"><span class="k">Active metamodule</span><span class="v mono" id="mmName">—</span></div>
+    <div class="row"><span class="k">Version</span><span class="v mono" id="mmVer">—</span></div>
+    <div class="row"><span class="k">kernelnosu-aware</span><span class="v" id="mmAware">—</span></div>
+    <div class="note" id="mmNote"></div>
+  </div>
 
-<div class="foot">nampud, xx, XxxY · KernelNoSU</div>
+  <div class="card">
+    <h2>Controls</h2>
+    <div class="row">
+      <div>
+        <div style="font-weight:600;color:var(--md-sys-color-on-surface)">SU Compatibility fallback</div>
+        <div class="kk">On = kernel path-hook (detectable). Off = real su only. The metamodule normally manages this automatically around the mount.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="scToggle"><span class="track"><span class="knob"></span></span></label>
+    </div>
+    <div class="row">
+      <div>
+        <div style="font-weight:600;color:var(--md-sys-color-on-surface)">kernel_umount ("Démontage du noyau")</div>
+        <div class="kk">A different, lower-level feature — <b>not required</b> for hiding su. It affects ALL modules' per-app umount and can break unrelated modules on some devices; leave off unless you have another reason to need it. See the Hiding card above for the setting that actually matters.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="kuToggle"><span class="track"><span class="knob"></span></span></label>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>System</h2>
+    <div class="row"><span class="k">Module</span><span class="v" id="vVer">—</span></div>
+    <div class="row"><span class="k">Kernel</span><span class="v mono" id="vKern">—</span></div>
+    <div class="row"><span class="k">ksud</span><span class="v mono" id="vKsud">—</span></div>
+    <div class="row"><span class="k">SUSFS</span><span class="v" id="pSusfs">—</span></div>
+    <div class="row"><span class="k">Zygisk</span><span class="v" id="pZyg">—</span></div>
+  </div>
+
+  <div class="foot">nampud, xx, XxxY · KernelNoSU</div>
+</main>
 
 <div class="bottom-bar">
-  <button class="act primary" id="btnVerify">Verify integrity</button>
-  <button class="act" id="btnHarden">Re-apply hide</button>
+  <div class="btnwrap">
+    <button class="act primary" id="btnVerify">Verify integrity</button>
+    <button class="act tonal" id="btnHarden">Re-apply hide</button>
+  </div>
 </div>
 
 <script>
@@ -336,6 +376,10 @@ async function refresh(){
     setHero("mut","Unknown state","Could not determine module status");
   }
 
+  // glanceable metric cards
+  $("mMode").textContent = real ? "Real" : (scOff?"None":"Compat");
+  $("mSusfs").textContent = (s.susfs|0) || "0";
+
   $("vBin").textContent = real ? (arch + (s.size?` · ${s.size} B`:"")) : "—";
   $("vSuPath").textContent = s.su || "su target";
   $("vMode").innerHTML = real ? (scOff?pill("ok","real su only"):pill("warn","real su + sucompat"))
@@ -365,8 +409,10 @@ async function refresh(){
 }
 
 function setHero(kind,state,desc){
-  const c={ok:"var(--ok)",warn:"var(--warn)",bad:"var(--bad)",mut:"var(--muted)"}[kind];
-  $("heroDot").style.color=c; $("heroState").textContent=state; $("heroDesc").textContent=desc;
+  const c={ok:"var(--ok)",warn:"var(--warn)",bad:"var(--bad)",mut:"var(--md-sys-color-on-surface-variant)"}[kind];
+  $("heroDot").style.color=c;
+  $("hero").className = "hero-card" + (kind==="mut" ? "" : " "+kind);
+  $("heroState").textContent=state; $("heroDesc").textContent=desc;
 }
 function log(msg,show=true){ const l=$("log"); l.textContent=msg; l.classList.toggle("show",show); }
 
@@ -419,34 +465,6 @@ $("btnHarden").addEventListener("click",async ()=>{
 });
 
 refresh();
-
-// ── light sheen: a soft highlight glides across the glass with device tilt.
-//    No card rotation (so scrolling stays fluid and layout never shifts), and
-//    it pauses while you scroll. ──
-(function(){
-  if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
-  let scrolledAt=0;
-  addEventListener('scroll',()=>{ scrolledAt=Date.now(); },{passive:true});
-  let raf=0, gx=50, gy=15;
-  function paint(){ raf=0;
-    document.querySelectorAll('.hero,.card').forEach(el=>{
-      el.style.setProperty('--gx',gx.toFixed(1)+'%'); el.style.setProperty('--gy',gy.toFixed(1)+'%'); });
-  }
-  function set(px,py){
-    if(Date.now()-scrolledAt<180) return;          // don't fight an active scroll
-    gx=50+px*32; gy=22+py*32; document.body.classList.add('sheen');
-    if(!raf) raf=requestAnimationFrame(paint);
-  }
-  function onOrient(e){ if(e.gamma==null&&e.beta==null) return;
-    set(Math.max(-25,Math.min(25,e.gamma||0))/25, Math.max(-40,Math.min(40,(e.beta||0)-40))/40); }
-  function gyro(){ if(typeof DeviceOrientationEvent==='undefined') return;
-    if(typeof DeviceOrientationEvent.requestPermission==='function')
-      DeviceOrientationEvent.requestPermission().then(s=>{ if(s==='granted') addEventListener('deviceorientation',onOrient); }).catch(()=>{});
-    else addEventListener('deviceorientation',onOrient); }
-  gyro(); addEventListener('touchstart',gyro,{once:true,passive:true});
-  addEventListener('pointermove',ev=>{ if(ev.pointerType==='touch') return;
-    set((ev.clientX/innerWidth)*2-1,(ev.clientY/innerHeight)*2-1); },{passive:true});
-})();
 
 // ── theme toggle (dark ⇄ light, persisted) ──
 (function(){
