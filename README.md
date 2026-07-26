@@ -21,6 +21,12 @@ The `su` binary itself just uses KernelSU's supercall: `reboot()` magic to obtai
 
 Disabling sucompat is **runtime-only** — it never touches `/data/adb/ksu/.feature_config`. So if the real su ever fails to land (mount backend quirk, etc.), `verify.sh` detects it (sha1-compares the mounted su against the module binary) and re-enables sucompat, and even a plain **reboot** restores the on-disk config. Root can't get stuck off. KSU **safe mode** is the ultimate fallback.
 
+## SUSFS-clobber protection
+
+Some managers (**ReSukiSU** and other integrated builds) ship a single *multi-call* binary hardlinked as both `/data/adb/ksud` and `/data/adb/ksu/bin/ksu_susfs` (same inode). A standalone **susfs4ksu** module then does an in-place `cp -f` over `ksu_susfs` at install/update — which also overwrites `ksud`, breaking the KernelSU daemon and `su` on the next boot.
+
+**`ksud_guard.sh`** defuses this automatically: it de-duplicates `ksu_susfs` into its own inode, so a later in-place overwrite of `ksu_susfs` can never reach `ksud`. It only touches `ksu_susfs` (never the daemon), copies byte-for-byte with the SELinux context preserved and verified before an atomic swap, acts **only** when the two share an inode (no-op on stock KSU/KSUN or without SUSFS), and is idempotent. It runs at install and every boot — users are protected with nothing to do.
+
 ## Compatibility
 
 | | |
@@ -62,6 +68,7 @@ KernelNoSU covers **one** vector well: it removes the sucompat `stat`/`open` inc
 | `verify.sh` | self-heal: re-enable sucompat if the real su didn't land |
 | `set_desc.sh` | live `[su]` / `[Compat]` / `[nosu]` badge on the module card |
 | `boot-completed.sh` | notification of the active mode |
+| `ksud_guard.sh` | shields `ksud` from susfs-module clobber (de-dups the `ksu_susfs` inode); runs at install + every boot |
 | `action.sh` | Termux `pm` wrapper (a real su, unlike sucompat, doesn't relabel the pts) |
 
 ## Building
@@ -83,4 +90,4 @@ Any other fork carrying the same supercall (UAPI ≥ 2) should work. Older prctl
 
 - Original `su` binary and concept: **nampud**
 - Upstream: [backslashxx/kernelnosu](https://github.com/backslashxx/kernelnosu)
-- This fork (post-fs-data + late-load fix, self-heal, SELinux hardening, WebUI, anti-detection posture): **xx, XxxY**
+- This fork (post-fs-data + late-load fix, self-heal, SELinux hardening, ksud-clobber shield, WebUI, anti-detection posture): **xx, XxxY**
