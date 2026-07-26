@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KernelNoSU</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --ink:#14171c; --muted:#6b7280; --line:#e6e8ec;
+    --accent:#2f6bff; --ok:#12a150; --warn:#d68309; --bad:#e5484d;
+    --okbg:#e7f6ec; --warnbg:#fbf0dd; --badbg:#fbe7e8; --chip:#eef1f6;
+    --shadow:0 1px 2px rgba(20,23,28,.06),0 6px 20px rgba(20,23,28,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0d0f13; --card:#161a20; --ink:#e8eaed; --muted:#9aa2ad; --line:#252b33;
+      --accent:#5b8cff; --ok:#3ecf7a; --warn:#f0a92e; --bad:#ff6b6f;
+      --okbg:#12291c; --warnbg:#2a2113; --badbg:#2c1516; --chip:#1f242c;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{--bg:#f4f5f7;--card:#fff;--ink:#14171c;--muted:#6b7280;--line:#e6e8ec;--accent:#2f6bff;--ok:#12a150;--warn:#d68309;--bad:#e5484d;--okbg:#e7f6ec;--warnbg:#fbf0dd;--badbg:#fbe7e8;--chip:#eef1f6}
+  :root[data-theme="dark"]{--bg:#0d0f13;--card:#161a20;--ink:#e8eaed;--muted:#9aa2ad;--line:#252b33;--accent:#5b8cff;--ok:#3ecf7a;--warn:#f0a92e;--bad:#ff6b6f;--okbg:#12291c;--warnbg:#2a2113;--badbg:#2c1516;--chip:#1f242c}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    padding:max(16px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;max-width:640px;margin:0 auto;
+  }
+  header{display:flex;align-items:center;gap:12px;margin:6px 2px 18px}
+  .logo{width:40px;height:40px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(145deg,var(--accent),#7aa2ff);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
+  header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.2px}
+  header .sub{color:var(--muted);font-size:12.5px;margin-top:1px}
+  .hero{
+    border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow);
+    border:1px solid var(--line);background:var(--card);
+    display:flex;align-items:center;gap:14px;
+  }
+  .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 18%,transparent)}
+  .hero .txt{flex:1;min-width:0}
+  .hero .state{font-weight:700;font-size:16px}
+  .hero .desc{color:var(--muted);font-size:13px;margin-top:2px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:6px 16px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .card h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    margin:14px 0 6px;font-weight:700}
+  .row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:0}
+  .row .k{color:var(--muted);font-size:13.5px;flex:0 0 auto}
+  .row .v{margin-left:auto;text-align:right;font-weight:600;min-width:0;
+    overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;
+    font-size:12px;font-weight:700;white-space:nowrap}
+  .pill.ok{background:var(--okbg);color:var(--ok)} .pill.warn{background:var(--warnbg);color:var(--warn)}
+  .pill.bad{background:var(--badbg);color:var(--bad)} .pill.mut{background:var(--chip);color:var(--muted)}
+  .toggle{position:relative;width:46px;height:28px;flex:0 0 auto;cursor:pointer}
+  .toggle input{opacity:0;width:0;height:0;position:absolute}
+  .track{position:absolute;inset:0;background:var(--chip);border-radius:999px;transition:.18s;border:1px solid var(--line)}
+  .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s}
+  .toggle input:checked + .track{background:var(--accent);border-color:transparent}
+  .toggle input:checked + .track .knob{transform:translateX(18px)}
+  .btnrow{display:flex;gap:10px;margin:12px 0 4px}
+  button.act{flex:1;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    font:inherit;font-weight:650;padding:11px;border-radius:12px;cursor:pointer;transition:.12s}
+  button.act:active{transform:scale(.98)}
+  button.act.primary{background:var(--accent);color:#fff;border-color:transparent}
+  button.act:disabled{opacity:.55}
+  .log{margin-top:10px;padding:11px 13px;border-radius:12px;background:var(--chip);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
+    white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);display:none}
+  .log.show{display:block}
+  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:16px}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .warnbox{display:none;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--warnbg);
+    color:var(--warn);font-size:12.5px;font-weight:600;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .warnbox.show{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">N</div>
+  <div>
+    <h1>KernelNoSU</h1>
+    <div class="sub">real <span class="mono">su</span> instead of sucompat hooking</div>
+  </div>
+</header>
+
+<div id="nobridge" class="warnbox">Not running inside a KernelSU WebUI — open this from your root manager's module WebUI to control the module.</div>
+
+<div class="hero" id="hero">
+  <span class="dot" id="heroDot" style="color:var(--muted)">&nbsp;</span>
+  <div class="txt">
+    <div class="state" id="heroState">Checking…</div>
+    <div class="desc" id="heroDesc">Reading module status</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Status</h2>
+  <div class="row"><span class="k">su mode</span><span class="v" id="vMode">—</span></div>
+  <div class="row"><span class="k">/system/bin/su</span><span class="v" id="vMount">—</span></div>
+  <div class="row"><span class="k">Consistency</span><span class="v" id="vConsist">—</span></div>
+  <div class="row"><span class="k">Hidden from apps</span><span class="v" id="vHide">—</span></div>
+  <div class="row"><span class="k">Binary</span><span class="v mono" id="vBin">—</span></div>
+</div>
+
+<div class="card">
+  <h2>Controls</h2>
+  <div class="row">
+    <div>
+      <div style="font-weight:650">SU Compatibility fallback</div>
+      <div style="color:var(--muted);font-size:12.5px">On = kernel path-hook (detectable). Off = real su only.</div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="scToggle"><span class="track"><span class="knob"></span></span></label>
+  </div>
+  <div class="btnrow">
+    <button class="act primary" id="btnVerify">Verify integrity</button>
+    <button class="act" id="btnHide">Re-apply hide</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<div class="card">
+  <h2>System</h2>
+  <div class="row"><span class="k">Module</span><span class="v" id="vVer">—</span></div>
+  <div class="row"><span class="k">Kernel</span><span class="v mono" id="vKern">—</span></div>
+  <div class="row"><span class="k">ksud</span><span class="v mono" id="vKsud">—</span></div>
+</div>
+
+<div class="foot">nampud, xx · KernelNoSU</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const hasBridge = typeof ksu!=="undefined" && ksu && typeof ksu.exec==="function";
+
+function exec(cmd){
+  return new Promise(res=>{
+    if(!hasBridge){ res({errno:-1,stdout:"",stderr:"no bridge"}); return; }
+    const cb="knc_"+Date.now()+"_"+Math.floor(Math.random()*1e6);
+    window[cb]=(errno,stdout,stderr)=>{ delete window[cb]; res({errno,stdout:stdout||"",stderr:stderr||""}); };
+    try{ ksu.exec(cmd,JSON.stringify({}),cb); }catch(e){ delete window[cb]; res({errno:-1,stdout:"",stderr:String(e)}); }
+  });
+}
+function toast(m){ try{ if(hasBridge&&ksu.toast) ksu.toast(m); }catch(e){} }
+
+const ARCH={183:"arm64",40:"arm",62:"x86_64",3:"x86"};
+const SU="/system/bin/su";
+
+const STATUS_CMD =
+  'sc=$(/data/adb/ksud feature list 2>/dev/null | awk \'/su_compat \\(ID=0\\)/{print (/ENABLED/)?"enabled":"disabled"}\');'+
+  'mnt=$(grep -c " /system/bin/su " /proc/self/mountinfo 2>/dev/null);'+
+  'src=$(awk \'$5=="/system/bin/su"{print $4; exit}\' /proc/self/mountinfo 2>/dev/null);'+
+  'size=$(wc -c < '+SU+' 2>/dev/null);'+
+  'op=$(head -c4 '+SU+' >/dev/null 2>&1 && echo yes || echo no);'+
+  'em=$(od -An -tu1 -j18 -N1 '+SU+' 2>/dev/null | tr -d " ");'+
+  'kern=$(uname -r);'+
+  'ksudv=$(/data/adb/ksud -V 2>/dev/null);'+
+  'modv=$(sed -n "s/^version=//p" /data/adb/modules/kernelnosu/module.prop 2>/dev/null);'+
+  'printf "sucompat=%s\\nmounted=%s\\nsize=%s\\nopenable=%s\\nem=%s\\nkernel=%s\\nksud=%s\\nmodver=%s\\nsrc=%s\\n" '+
+  '"$sc" "$mnt" "$size" "$op" "$em" "$kern" "$ksudv" "$modv" "$src"';
+
+function parse(t){ const o={}; t.split("\n").forEach(l=>{const i=l.indexOf("=");if(i>0)o[l.slice(0,i)]=l.slice(i+1).trim();}); return o; }
+function pill(cls,txt){ return `<span class="pill ${cls}">${txt}</span>`; }
+
+async function refresh(){
+  if(!hasBridge){ $("nobridge").classList.add("show"); setHero("mut","WebUI bridge unavailable","Open from the root manager"); return; }
+  const r=await exec(STATUS_CMD);
+  const s=parse(r.stdout);
+  const mounted = (s.mounted|0)>0;
+  const scOff = s.sucompat==="disabled";
+  const consistent = mounted && s.openable==="yes";
+  const arch = ARCH[s.em] || (s.em?("e_machine "+s.em):"—");
+
+  // hero verdict
+  if(mounted && scOff && consistent){
+    setHero("ok","Real su active","sucompat off · /system/bin/su is a real, consistent binary");
+  } else if(mounted && !scOff){
+    setHero("warn","Real su + sucompat both on","Disable SU Compatibility below for a clean, undetectable su");
+  } else if(!mounted && !scOff){
+    setHero("warn","sucompat mode","Real su not mounted — kernel path-hook is serving root (detectable)");
+  } else if(!mounted && scOff){
+    setHero("bad","No su available","sucompat off and no mounted su — reboot to restore the fallback");
+  } else {
+    setHero("mut","Unknown state","Could not determine module status");
+  }
+
+  $("vMode").innerHTML = mounted ? (scOff?pill("ok","real su only"):pill("warn","real su + sucompat"))
+                                 : (scOff?pill("bad","none"):pill("mut","sucompat"));
+  $("vMount").innerHTML = mounted ? pill("ok","mounted"+(s.size?` · ${s.size} B`:"")) : pill("mut","not mounted");
+  $("vConsist").innerHTML = mounted ? (consistent?pill("ok","stat + open agree"):pill("bad","open fails")) : pill("mut","n/a");
+  $("vHide").innerHTML = mounted ? pill("ok","KSU umount (non-su)") : pill("mut","n/a");
+  $("vBin").textContent = mounted ? (arch + (s.size?` · ${s.size} B`:"")) : "—";
+
+  $("scToggle").checked = !scOff;   // checked = sucompat ON
+  $("vVer").textContent = s.modver||"—";
+  $("vKern").textContent = s.kernel||"—";
+  $("vKsud").textContent = (s.ksud||"—").replace(/^ksud\s*/,"");
+}
+
+function setHero(kind,state,desc){
+  const c={ok:"var(--ok)",warn:"var(--warn)",bad:"var(--bad)",mut:"var(--muted)"}[kind];
+  $("heroDot").style.color=c; $("heroState").textContent=state; $("heroDesc").textContent=desc;
+}
+function log(msg,show=true){ const l=$("log"); l.textContent=msg; l.classList.toggle("show",show); }
+
+$("scToggle").addEventListener("change",async e=>{
+  const want=e.target.checked; // checked => enable sucompat
+  e.target.disabled=true;
+  log((want?"Enabling":"Disabling")+" SU Compatibility…");
+  const r=await exec("/data/adb/ksud feature set 0 "+(want?1:0));
+  toast(r.errno===0?("SU Compatibility "+(want?"enabled":"disabled")):"Failed");
+  log(r.errno===0?("su_compat "+(want?"enabled":"disabled")+". Note: runtime-only — a reboot reloads the saved config.")
+                 :("Failed: "+(r.stderr||r.stdout||"errno "+r.errno)));
+  e.target.disabled=false;
+  refresh();
+});
+
+$("btnVerify").addEventListener("click",async ()=>{
+  const b=$("btnVerify"); b.disabled=true; b.innerHTML='<span class="spin"></span> Verifying';
+  const cmd=
+    'echo "sucompat: $(/data/adb/ksud feature list 2>/dev/null | awk \'/su_compat \\(ID=0\\)/{print (/ENABLED/)?\\"ENABLED\\":\\"DISABLED\\"}\')";'+
+    'echo "mount: $(grep -c \\" /system/bin/su \\" /proc/self/mountinfo) entry";'+
+    'echo "stat: $(ls -l '+SU+' 2>&1 | cat)";'+
+    'echo "open: $(head -c4 '+SU+' >/dev/null 2>&1 && echo readable || echo ENOENT)";'+
+    'echo "exec: uid=$('+SU+' -c id -u 2>/dev/null || echo denied)"';
+  const r=await exec(cmd);
+  log(r.stdout||r.stderr||"no output");
+  b.disabled=false; b.textContent="Verify integrity";
+});
+
+$("btnHide").addEventListener("click",async ()=>{
+  const b=$("btnHide"); b.disabled=true; b.textContent="Applying…";
+  const cmd=
+    'T=/data/adb/ksu/bin/ksu_susfs;'+
+    'if [ -x "$T" ]; then '+
+    ' if "$T" add_try_umount /system/bin/su 1 >/dev/null 2>&1; then echo "susfs: add_try_umount OK";'+
+    ' elif "$T" add_sus_path /system/bin/su >/dev/null 2>&1; then echo "susfs: add_sus_path OK";'+
+    ' else echo "susfs present but neither add_try_umount nor add_sus_path accepted"; fi;'+
+    'else echo "no susfs — relying on KSU auto-umount"; fi';
+  const r=await exec(cmd);
+  toast("Hide re-applied");
+  log(r.stdout||r.stderr||"done");
+  b.disabled=false; b.textContent="Re-apply hide";
+});
+
+refresh();
+</script>
+</body>
+</html>
