@@ -2,12 +2,38 @@
 PATH=/data/adb/ksu/bin:$PATH
 ELF_BINARY="su-arm"
 
-# Option A: pin su to a standard, canonical location. The mount is hidden from
-# non-root processes by KSU's module umount (belt-and-suspenders in service.sh
-# via susfs add_try_umount), so the file stays stat/exec-consistent for root
-# while banking/RASP apps see nothing. Set to "" to fall back to hunt_min_dir
-# (the legacy "obscure lowest-file-count dir" strategy, i.e. Option B).
-SU_DIR="/system/bin"
+# Auto-detect the best su target directory, preferring an already-separate
+# partition over /system/bin:
+# - /system/bin is extremely busy (hundreds of binaries constantly exec'd by
+#   zygote/system_server), which can make the mount-tree promotion needed to
+#   add a net-new file there fail to persist, and it's exactly the directory
+#   some root detectors scrutinize for an "inconsistent mount" (a subtree that
+#   should be uniform with the rest of /system but isn't).
+# - /product, /system_ext, /vendor, /odm are already their own partition/mount
+#   on modern (Treble) devices, so a module contributing new content there is
+#   unremarkable - the same way other modules' /product/overlay etc. aren't
+#   flagged - and each has only a handful of files, so the mount reliably
+#   lands and persists.
+# Not every ROM has these as real separate partitions (older/non-Treble
+# builds, or ROMs that fold everything into /system) - detect_su_dir() checks
+# each candidate's device number against /system's and falls back to
+# /system/bin if none of them are actually separate.
+detect_su_dir() {
+	sysdev=$(stat -c %D /system 2>/dev/null)
+	for p in /product /system_ext /vendor /odm; do
+		[ -d "$p/bin" ] || continue
+		pdev=$(stat -c %D "$p" 2>/dev/null)
+		if [ -n "$pdev" ] && [ -n "$sysdev" ] && [ "$pdev" != "$sysdev" ]; then
+			echo "$p/bin"
+			return 0
+		fi
+	done
+	echo "/system/bin"
+}
+
+# Set to "" to force the legacy hunt_min_dir strategy (Option B: obscure
+# lowest-file-count dir on $PATH) instead of auto-detection.
+SU_DIR=$(detect_su_dir)
 
 if [ ! "$KSU" = true ]; then
 	abort "[!] KernelSU only!"
@@ -35,6 +61,7 @@ esac
 # hunt for lowest filecount dir on $PATH
 
 prep_custom_dir() {
+	final="$1/su"
 	line=$1
 	if echo "$line" | grep -Eq "^/(product|vendor|odm|system_ext)/" && ! echo "$line" | grep -q "^/system/"; then
 		line="/system$line"
@@ -45,6 +72,14 @@ prep_custom_dir() {
 	busybox chcon --reference="/system/bin/sh" "$MODPATH/$line/su"
 	chmod 755 "$MODPATH/$line/su"
 	echo "[+] su will be on $line/su"
+
+	# Persist the final, real (non-rewritten) mount path AND the module's own
+	# storage path for it, so every other script (harden.sh, verify.sh,
+	# set_desc.sh, boot-completed.sh) and the companion metamodule read the
+	# SAME two paths instead of each hardcoding /product/bin/su - keeps them
+	# all correct regardless of which partition auto-detection picked.
+	echo "$final" > "$MODPATH/su_target"
+	echo "${line#/}/su" > "$MODPATH/su_source"
 }
 
 # small snippet that hunts for folder in $PATH that has lowest number of files!
@@ -92,14 +127,26 @@ if [ "$KSU" = "true" ] && [ "$KSU_KERNEL_VER_CODE" -ge 22004 ]; then
 	/data/adb/ksud feature list 2>/dev/null | grep -q su_compat || abort "[!] su_compat feature not available on this manager"
 fi
 
+# Stage the su binary under $MODPATH/system/<partition>/bin/su (via
+# prep_custom_dir's rewrite for non-/system targets). This is a NORMAL module
+# file - mounted by whatever mount backend is active (plain ksud or a
+# metamodule) exactly like any other module's content for that partition. No
+# skip_mount, no self-mount plumbing needed.
 if [ -n "$SU_DIR" ]; then
-	echo "[+] pinned target (Option A): $SU_DIR"
+	echo "[+] auto-detected target: $SU_DIR"
 	prep_custom_dir "$SU_DIR"
 else
 	hunt_min_dir
 fi
 
-# card badge until the first boot applies the live su mode (post-mount.sh)
+# Disabling sucompat before the mount (so /system/bin/su has no spoof) and
+# self-healing if the real su doesn't land are handled by the mount backend
+# itself when it is kernelnosu-aware (this fork's metamodule calls
+# knsu_pre_mount/knsu_post_mount around the mount). On a backend that ISN'T
+# kernelnosu-aware, post-fs-data.sh below still disables sucompat as a
+# best-effort (harmless no-op if something else already did).
+
+# card badge until the first boot applies the live su mode (service.sh)
 sed -i "s|^description=.*|description=[⏳ reboot to activate] real su replaces sucompat — KernelSU su binary|" "$MODPATH/module.prop" 2>/dev/null
 
 # shield ksud from susfs-module binary installers right now (install-time), so
