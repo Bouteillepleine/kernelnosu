@@ -84,7 +84,12 @@ busybox chmod +x "$MODPATH/$ELF_BINARY"
 
 # test ksud if it has a way to disable
 if [ "$KSU" = "true" ] && [ "$KSU_KERNEL_VER_CODE" -ge 22004 ]; then
-	/data/adb/ksud feature list | grep su_compat > /dev/null 2>&1 || abort "[!] Feature not implemented!"
+	# distinguish a clobbered ksud (e.g. a susfs module overwrote it) from a
+	# manager that genuinely lacks the su_compat feature
+	if ! /data/adb/ksud -V 2>/dev/null | grep -qiE "ksud|uapi"; then
+		abort "[!] /data/adb/ksud is not responding as ksud (clobbered?) - reinstall/open your root manager to restore it, then flash again"
+	fi
+	/data/adb/ksud feature list 2>/dev/null | grep -q su_compat || abort "[!] su_compat feature not available on this manager"
 fi
 
 if [ -n "$SU_DIR" ]; then
