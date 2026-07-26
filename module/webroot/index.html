@@ -188,15 +188,13 @@
   .warnbox.show{display:block}
   .foot{text-align:center;color:var(--md-sys-color-on-surface-variant);font-size:11.5px;opacity:.8;padding:4px 0}
 
-  /* ---------- bottom action bar (MD3, solid surface like mmrs nav) ---------- */
-  .bottom-bar{
-    position:fixed;left:0;right:0;bottom:0;z-index:90;
-    display:flex;gap:12px;
-    padding:12px 16px calc(12px + var(--window-inset-bottom,0px));
-    background:var(--md-sys-color-surface);
-    border-top:1px solid var(--md-sys-color-outline-variant);
-  }
-  .bottom-bar .btnwrap{max-width:800px;margin:0 auto;width:100%;display:flex;gap:12px}
+  /* ---------- tab pages ---------- */
+  .tab-page{display:none;flex-direction:column;gap:16px}
+  .tab-page.active{display:flex;animation:pagein .22s ease}
+  @keyframes pagein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- action buttons (in Controls tab) ---------- */
+  .actions{display:flex;gap:12px;margin-top:4px}
   .act{flex:1;appearance:none;border:0;font:inherit;font-size:15px;font-weight:600;
     padding:14px;border-radius:100px;cursor:pointer;transition:filter .15s,transform .1s,background .2s}
   .act:active{transform:scale(.98)}
@@ -204,7 +202,27 @@
   .act.primary:active{filter:brightness(1.08)}
   .act.tonal{background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)}
   .act:disabled{opacity:.55;cursor:default}
-  @media (prefers-reduced-motion:reduce){.act,.hero-card,.hero-ring{transition:none}}
+
+  /* ---------- MD3 bottom navigation (icon + label, active icon-pill) ---------- */
+  .bottom-nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:90;
+    display:flex;justify-content:space-around;align-items:center;
+    padding:8px 4px calc(8px + var(--window-inset-bottom,0px));
+    background:var(--md-sys-color-surface);
+    border-top:1px solid var(--md-sys-color-outline-variant);
+  }
+  .nav-tab{display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:4px 6px;border:0;background:transparent;cursor:pointer;border-radius:16px;
+    color:var(--md-sys-color-on-surface-variant);transition:color .2s;flex:1;max-width:120px}
+  .nav-tab .ic{width:56px;height:32px;border-radius:16px;display:grid;place-items:center;
+    transition:background .2s,transform .2s;background:transparent}
+  .nav-tab .ic svg{width:24px;height:24px;fill:currentColor}
+  .nav-tab .lbl{font-size:11px;font-weight:500}
+  .nav-tab.active{color:var(--md-sys-color-primary)}
+  .nav-tab.active .ic{background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);transform:scale(1.06)}
+  .nav-tab.active .lbl{font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){.act,.hero-card,.hero-ring,.tab-page,.nav-tab .ic{transition:none;animation:none}}
 </style>
 </head>
 <body>
@@ -222,6 +240,7 @@
 <main>
   <div id="nobridge" class="warnbox">Not running inside a KernelSU WebUI — open this from your root manager's module WebUI to control the module.</div>
 
+  <section class="tab-page active" data-tab="status">
   <div class="hero-card" id="hero">
     <span class="hero-ring" id="heroDot"><span class="core"></span></span>
     <div class="hero-txt">
@@ -242,7 +261,9 @@
     <div class="row"><span class="k">Consistency</span><span class="v" id="vConsist">—</span></div>
     <div class="row"><span class="k">sucompat (path-hook)</span><span class="v" id="vSucompat">—</span></div>
   </div>
+  </section>
 
+  <section class="tab-page" data-tab="hiding">
   <div class="card">
     <h2>Hiding from apps</h2>
     <div class="row"><span class="k">This shell's own view</span><span class="v" id="hVisible">—</span></div>
@@ -265,7 +286,9 @@
     <div class="row"><span class="k">kernelnosu-aware</span><span class="v" id="mmAware">—</span></div>
     <div class="note" id="mmNote"></div>
   </div>
+  </section>
 
+  <section class="tab-page" data-tab="controls">
   <div class="card">
     <h2>Controls</h2>
     <div class="row">
@@ -284,7 +307,13 @@
     </div>
     <div class="log" id="log"></div>
   </div>
+  <div class="actions">
+    <button class="act primary" id="btnVerify">Verify integrity</button>
+    <button class="act tonal" id="btnHarden">Re-apply hide</button>
+  </div>
+  </section>
 
+  <section class="tab-page" data-tab="system">
   <div class="card">
     <h2>System</h2>
     <div class="row"><span class="k">Module</span><span class="v" id="vVer">—</span></div>
@@ -295,14 +324,27 @@
   </div>
 
   <div class="foot">nampud, xx, XxxY · KernelNoSU</div>
+  </section>
 </main>
 
-<div class="bottom-bar">
-  <div class="btnwrap">
-    <button class="act primary" id="btnVerify">Verify integrity</button>
-    <button class="act tonal" id="btnHarden">Re-apply hide</button>
-  </div>
-</div>
+<nav class="bottom-nav">
+  <button class="nav-tab active" data-tab="status">
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></span>
+    <span class="lbl">Status</span>
+  </button>
+  <button class="nav-tab" data-tab="hiding">
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
+    <span class="lbl">Hiding</span>
+  </button>
+  <button class="nav-tab" data-tab="controls">
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg></span>
+    <span class="lbl">Controls</span>
+  </button>
+  <button class="nav-tab" data-tab="system">
+    <span class="ic"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></span>
+    <span class="lbl">System</span>
+  </button>
+</nav>
 
 <script>
 "use strict";
@@ -465,6 +507,18 @@ $("btnHarden").addEventListener("click",async ()=>{
 });
 
 refresh();
+
+// ── tab navigation ──
+(function(){
+  const navTabs=[...document.querySelectorAll('.nav-tab')];
+  const pages=[...document.querySelectorAll('.tab-page')];
+  function show(name){
+    pages.forEach(p=>p.classList.toggle('active',p.dataset.tab===name));
+    navTabs.forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
+    scrollTo({top:0,behavior:'instant'});
+  }
+  navTabs.forEach(n=>n.addEventListener('click',()=>show(n.dataset.tab)));
+})();
 
 // ── theme toggle (dark ⇄ light, persisted) ──
 (function(){
