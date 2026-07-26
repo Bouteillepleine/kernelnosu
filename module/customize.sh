@@ -97,4 +97,8 @@ fi
 # card badge until the first boot applies the live su mode (post-mount.sh)
 sed -i "s|^description=.*|description=[⏳ reboot to activate] real su replaces sucompat — KernelSU su binary|" "$MODPATH/module.prop" 2>/dev/null
 
+# shield ksud from susfs-module binary installers right now (install-time), so
+# it's protected even before the first reboot. No-op unless vulnerable.
+[ -f "$MODPATH/ksud_guard.sh" ] && sh "$MODPATH/ksud_guard.sh"
+
 # EOF

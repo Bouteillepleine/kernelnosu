@@ -12,6 +12,12 @@ PATH=/data/adb/ksu/bin:$PATH
 # This is runtime-only (it does NOT write /data/adb/ksu/.feature_config), so if
 # the su mount ever fails to materialise, a plain reboot reloads the on-disk
 # (enabled) config and restores sucompat as a fallback - self-healing.
+
+# Shield /data/adb/ksud from susfs-module binary installers first (no-op unless
+# vulnerable). Runs before anything else so the daemon is protected early.
+MODDIR=${0%/*}
+[ -f "$MODDIR/ksud_guard.sh" ] && sh "$MODDIR/ksud_guard.sh"
+
 /data/adb/ksud feature set 0 0
 
 # EOF

@@ -13,6 +13,12 @@ PATH=/data/adb/ksu/bin:$PATH
 # Note: pure LKM means a stock, unpatched kernel = no SUSFS, so the susfs-based
 # hardening in post-mount is a no-op there; KSU's own per-app umount still hides
 # the su, and the core "real su, no sucompat tell" benefit still applies.
+
+# Shield /data/adb/ksud from susfs-module binary installers (no-op unless
+# ksu_susfs is hardlinked to ksud, e.g. some integrated builds).
+MODDIR=${0%/*}
+[ -f "$MODDIR/ksud_guard.sh" ] && sh "$MODDIR/ksud_guard.sh"
+
 /data/adb/ksud feature set 0 0
 
 # EOF
