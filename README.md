@@ -29,7 +29,7 @@ Disabling sucompat is **runtime-only** — it never touches `/data/adb/ksu/.feat
 | **GKI built-in** | ✅ full |
 | **LKM (loaded by init)** | ✅ full |
 | **LKM late-load** | ✅ via `late-load.sh` |
-| **Not supported** | Magisk, APatch, old prctl-only KernelSU |
+| **Not supported** | Magisk (no supercall/ksud); APatch (KernelPatch superkey model, not KernelSU's ioctl supercall); old prctl-only KernelSU |
 | **SUSFS** | optional. Pure LKM = stock/unpatched kernel = **no SUSFS**. The core (real su + hide via KSU umount) still works; the wider SUSFS hiding layer needs a patched (custom) kernel. |
 
 ## Install
