@@ -127,41 +127,46 @@
   .themebtn:active{transform:scale(.94)}
   @media (prefers-reduced-motion:reduce){#aurora{animation:none}.sheen .hero::after,.sheen .card::after{opacity:0}}
 
-  /* floating glass action bar (same treatment as the ReSukiSU manager bottom bar).
-     On a near-black page a plain drop-shadow is invisible, so the "lifted" look
-     comes from a bright rim + inner top sheen + a clearly lighter glass surface;
-     the buttons are translucent pills so the glass capsule reads as the frame. */
+  /* KSU-Next "liquid" floating capsule (ported from KernelSU-Next's
+     FloatingBottomBar): a 24px glass capsule with a bright top-fading rim,
+     an inner top sheen and a translucent body. These are actions (not tabs),
+     so there's no sliding selector — but the glass look matches the metamodule
+     tab bar, and the pills spring on press for the same fluid feel. */
   .bottom-bar{
     position:fixed;
-    bottom:calc(env(safe-area-inset-bottom) + 18px);
+    bottom:calc(env(safe-area-inset-bottom) + 16px);
     left:50%;transform:translateX(-50%);
     width:min(560px,calc(100% - 28px));
-    display:flex;gap:9px;padding:7px;
-    border-radius:22px;overflow:hidden;
-    background:color-mix(in srgb,var(--card) 74%,transparent);
+    display:flex;gap:7px;padding:7px;
+    border-radius:24px;overflow:hidden;
+    background:color-mix(in srgb,var(--card) 72%,transparent);
     backdrop-filter:blur(26px) saturate(1.7);
     -webkit-backdrop-filter:blur(26px) saturate(1.7);
-    border:1px solid color-mix(in srgb,#fff 16%,transparent);
+    border:1px solid color-mix(in srgb,#fff 20%,transparent);
     box-shadow:
-      0 10px 30px rgba(0,0,0,.5),
+      0 12px 34px rgba(0,0,0,.5),
       0 3px 10px rgba(0,0,0,.4),
-      inset 0 1px 0 color-mix(in srgb,#fff 22%,transparent);
+      inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent);
     z-index:5;
   }
+  /* bright rim fading top→bottom, like the Compose glassRim gradient */
   .bottom-bar::before{
     content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:linear-gradient(180deg,color-mix(in srgb,#fff 15%,transparent),transparent 50%);
+    background:linear-gradient(180deg,
+      color-mix(in srgb,#fff 14%,transparent),
+      color-mix(in srgb,#fff 3%,transparent) 45%,
+      transparent 70%);
   }
-  /* translucent pills inside the glass — no chunky 3D shadow, let the capsule
-     surface show through so the bar reads as one floating frame */
+  /* translucent pills inside the glass — spring on press for the fluid feel */
   .bottom-bar .act{
-    margin:0;flex:1;position:relative;z-index:1;padding:12px;
-    border-radius:15px;color:var(--ink);
+    margin:0;flex:1;position:relative;z-index:1;padding:13px;
+    border-radius:17px;color:var(--ink);
     background:color-mix(in srgb,#fff 6%,transparent);
     border:1px solid color-mix(in srgb,#fff 10%,transparent);
     box-shadow:none;
+    transition:transform .28s cubic-bezier(.34,1.42,.5,1),box-shadow .2s ease;
   }
-  .bottom-bar .act:active{transform:scale(.97);box-shadow:none}
+  .bottom-bar .act:active{transform:scale(.94);box-shadow:none}
   .bottom-bar .act.primary{
     background:color-mix(in srgb,var(--accent) 90%,transparent);color:#fff;
     border-color:color-mix(in srgb,#fff 18%,transparent);
@@ -169,6 +174,7 @@
                inset 0 1px 0 color-mix(in srgb,#fff 30%,transparent);
   }
   .bottom-bar .act.primary:active{box-shadow:0 1px 6px color-mix(in srgb,var(--accent) 45%,transparent)}
+  @media (prefers-reduced-motion:reduce){.bottom-bar .act{transition:none}}
 </style>
 </head>
 <body>
